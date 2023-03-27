@@ -2,10 +2,10 @@
 // +build darwin
 
 // Darwin平台代码源自
-//
 //	https://github.com/lwch/rdesktop
 //
 // 感谢原作者创造性的工作!
+
 package platformImpl
 
 /*
@@ -41,7 +41,7 @@ type ImplCursorConfig struct {
 }
 
 func (i *Impl) New(config ImplConfig) error {
-	i.id = getDisplayID()
+	i.id = i.getDisplayID()
 	return nil
 }
 
@@ -66,7 +66,7 @@ func (i *Impl) CaptureWithConfig(config ImplCursorConfig) (img *image.RGBA, err 
 	if width == 0 || height == 0 {
 		return nil, fmt.Errorf("can not get cursor size")
 	}
-	img := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
+	img = image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
 	C.cursor_copy((*C.uchar)(unsafe.Pointer(&img.Pix[0])), width, height)
 	return img, nil
 }

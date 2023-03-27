@@ -25,11 +25,11 @@ type Impl struct {
 type ImplConfig struct {
 	// Example :0
 	Display string
-	// 忽略panic
-	IgnorePanic bool
 }
 
 type ImplCursorConfig struct {
+	// 忽略panic
+	IgnorePanic bool
 }
 
 func (i *Impl) New(config ImplConfig) error {
@@ -59,7 +59,7 @@ func (i *Impl) CaptureWithConfig(config ImplCursorConfig) (img *image.RGBA, err 
 	if err != nil {
 		return nil, err
 	}
-	img := image.NewRGBA(image.Rect(0, 0, int(rep.Width), int(rep.Height)))
+	img = image.NewRGBA(image.Rect(0, 0, int(rep.Width), int(rep.Height)))
 	curImgBytes := make([]byte, len(rep.CursorImage)*4)
 	for j, v := range rep.CursorImage {
 		binary.LittleEndian.PutUint32(curImgBytes[j*4:], v)
