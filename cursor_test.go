@@ -7,12 +7,12 @@ import (
 )
 
 func TestCaptureCursor(t *testing.T) {
-	i, err := New()
+	c, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer i.Free()
-	img, err := i.Capture()
+	defer c.Free()
+	img, err := c.Capture()
 	if err != nil {
 		t.Fatal(err)
 	}
