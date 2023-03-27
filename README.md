@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/flyqie/gocursor.svg)](https://pkg.go.dev/github.com/flyqie/gocursor)
 [![go-mod](https://img.shields.io/github/go-mod/go-version/flyqie/gocursor)](https://github.com/flyqie/gocursor)
+[![Go Report Card](https://goreportcard.com/badge/github.com/flyqie/gocursor)](https://goreportcard.com/report/github.com/flyqie/gocursor)
 
 GoCursor is a project that provides Cursor Image capture.
 
