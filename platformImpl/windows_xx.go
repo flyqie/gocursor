@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/flyqie/gocursor/platformImpl/windef"
 	"image"
+	"image/draw"
 	"syscall"
 	"unsafe"
 )
@@ -186,6 +187,7 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 	if copyFromMask {
 		_, _, _ = syscall.SyscallN(windef.FuncGetBitmapBits, uintptr(hBitmap), uintptr(bitmapInfo.BmWidthBytes*(bitmapInfo.BmHeight*2)), i.buffer)
 		offset := 0
+		var doOutline bool
 		for dy := 0; dy < img.Rect.Max.Y; dy++ {
 			for dx := 0; dx < img.Rect.Max.X; dx++ {
 				_byte := dy*int(bitmapInfo.BmWidthBytes) + dx/8
@@ -210,6 +212,7 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 					img.Pix[offset+1] = 0
 					img.Pix[offset+2] = 0
 					img.Pix[offset+3] = 0xff
+					doOutline = true
 				} else {
 					// Transparent pixel
 					img.Pix[offset+0] = 0
@@ -220,17 +223,52 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 				offset += 4
 			}
 		}
-		// 重设光标到白色, 上面代码拿到的是黑色
-		_offset := 0
-		for dy := 0; dy < img.Rect.Max.Y; dy++ {
-			for dx := 0; dx < img.Rect.Max.X; dx++ {
-				if img.Pix[_offset+3] == 0xff && img.Pix[_offset+2] == 0 && img.Pix[_offset+1] == 0 && img.Pix[_offset] == 0 {
-					img.Pix[_offset+2] = 0xff
-					img.Pix[_offset+1] = 0xff
-					img.Pix[_offset] = 0xff
+		if doOutline {
+			outlineImg := image.NewRGBA(image.Rect(0, 0, img.Rect.Max.X+2, img.Rect.Max.Y+2))
+			_offset := int((bitmapInfo.BmWidth * 4) + 4)
+			offset = 0
+			for dy := 0; dy < img.Rect.Max.Y; dy++ {
+				for dx := 0; dx < img.Rect.Max.X; dx++ {
+					// Visible pixel?
+					if img.Pix[offset+3] > 0 {
+						// Outline above...
+						for j := 0; j < 4*3; j++ {
+							outlineImg.Pix[_offset-((img.Rect.Max.X+2)*4-4)+j] = 0xff
+						}
+						// ...besides...
+						for j := 0; j < 4*3; j++ {
+							outlineImg.Pix[_offset+4+j] = 0xff
+						}
+						// ...and above
+						for j := 0; j < 4*3; j++ {
+							outlineImg.Pix[_offset+(img.Rect.Max.X+2)*4+4+j] = 0xff
+						}
+					}
+					offset += 4
+					_offset += 4
 				}
-				_offset += 4
+				// outline is slightly larger
+				_offset += 2 * 4
 			}
+			_offset = int(bitmapInfo.BmWidth*4 + 4)
+			offset = 0
+			for dy := 0; dy < img.Rect.Max.Y; dy++ {
+				for dx := 0; dx < img.Rect.Max.X; dx++ {
+					if img.Pix[offset+3] > 0 {
+						for j := 0; j < 4; j++ {
+							outlineImg.Pix[_offset+8+j] = img.Pix[offset+j]
+						}
+					}
+					offset += 4
+					_offset += 4
+				}
+				_offset += 2 * 4
+			}
+			// copy new image
+			outlineImgClipRect := image.Rect(1, 1, img.Rect.Max.X+1, img.Rect.Max.Y+1)
+			outlineImgClipDest := image.NewRGBA(outlineImgClipRect)
+			draw.Draw(outlineImgClipDest, outlineImgClipRect.Bounds(), outlineImg, outlineImgClipRect.Min, draw.Src)
+			img.Pix = outlineImgClipDest.Pix
 		}
 	} else {
 		var hdr BITMAPINFOHEADER
