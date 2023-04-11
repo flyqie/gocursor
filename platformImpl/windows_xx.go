@@ -225,6 +225,7 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 		}
 		if doOutline {
 			outlineImg := image.NewRGBA(image.Rect(0, 0, img.Rect.Max.X+2, img.Rect.Max.Y+2))
+			// Pass 1, outline everything
 			_offset := int((bitmapInfo.BmWidth * 4) + 4)
 			offset = 0
 			for dy := 0; dy < img.Rect.Max.Y; dy++ {
@@ -233,15 +234,15 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 					if img.Pix[offset+3] > 0 {
 						// Outline above...
 						for j := 0; j < 4*3; j++ {
-							outlineImg.Pix[_offset-((img.Rect.Max.X+2)*4-4)+j] = 0xff
+							outlineImg.Pix[_offset-(img.Rect.Max.X+2)*4-4+j] = 0xff
 						}
 						// ...besides...
 						for j := 0; j < 4*3; j++ {
-							outlineImg.Pix[_offset+4+j] = 0xff
+							outlineImg.Pix[_offset-4+j] = 0xff
 						}
 						// ...and above
 						for j := 0; j < 4*3; j++ {
-							outlineImg.Pix[_offset+(img.Rect.Max.X+2)*4+4+j] = 0xff
+							outlineImg.Pix[_offset+(img.Rect.Max.X+2)*4-4+j] = 0xff
 						}
 					}
 					offset += 4
@@ -250,13 +251,14 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 				// outline is slightly larger
 				_offset += 2 * 4
 			}
+			// Pass 2, overwrite with actual cursor
 			_offset = int(bitmapInfo.BmWidth*4 + 4)
 			offset = 0
 			for dy := 0; dy < img.Rect.Max.Y; dy++ {
 				for dx := 0; dx < img.Rect.Max.X; dx++ {
 					if img.Pix[offset+3] > 0 {
 						for j := 0; j < 4; j++ {
-							outlineImg.Pix[_offset+8+j] = img.Pix[offset+j]
+							outlineImg.Pix[_offset+j] = img.Pix[offset+j]
 						}
 					}
 					offset += 4
@@ -264,7 +266,7 @@ func (i *Impl) copyImageData(hdc, bitmap uintptr, img *image.RGBA, copyFromMask 
 				}
 				_offset += 2 * 4
 			}
-			// copy new image
+			// Pass 3, copy new image
 			outlineImgClipRect := image.Rect(1, 1, img.Rect.Max.X+1, img.Rect.Max.Y+1)
 			outlineImgClipDest := image.NewRGBA(outlineImgClipRect)
 			draw.Draw(outlineImgClipDest, outlineImgClipRect.Bounds(), outlineImg, outlineImgClipRect.Min, draw.Src)
