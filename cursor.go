@@ -13,6 +13,7 @@ var (
 	InstanceUsableError  = errors.New("instance not usable")
 	CaptureError         = errors.New("cursor capture error")
 	FreeError            = errors.New("instance has been freed")
+	CaptureUnknownError  = errors.New("cursor unknown capture error, please check platformImpl for debugging")
 )
 
 type Cursor struct {
@@ -58,6 +59,10 @@ func (c *Cursor) CaptureWithConfig(config platformImpl.ImplCursorConfig) (*image
 	curImg, err := c.platImpl.CaptureWithConfig(config)
 	if err != nil {
 		return nil, multierror.Append(nil, CaptureError, err)
+	}
+	// 平台实现出现了意外情况
+	if curImg == nil {
+		return nil, multierror.Append(nil, CaptureUnknownError)
 	}
 	return curImg, nil
 }
